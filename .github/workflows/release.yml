@@ -56,7 +56,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: binaries
+          name: binaries-${{ matrix.artifact }}
           path: dist/*
 
   create-release:
@@ -68,7 +68,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: binaries
+          name: binaries-*
           path: dist
           merge-multiple: true
           path-separator: "/"
