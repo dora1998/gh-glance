@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release binary for multi OS
+    strategy:
+      matrix:
+        include:
+          - os: macos-13
+            target: x86_64-apple-darwin
+            artifact: darwin-amd64
+          - os: macos-13
+            target: aarch64-apple-darwin
+            artifact: darwin-arm64
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            artifact: windows-amd64.exe
+          - os: windows-2022
+            target: aarch64-pc-windows-msvc
+            artifact: windows-arm64.exe
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            artifact: linux-amd64
+          - os: ubuntu-24.04
+            target: aarch64-unknown-linux-gnu
+            artifact: linux-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target ${{ matrix.target }}
+      - name: Package extension
+        run: |
+          mkdir -p dist
+          if [ "${{ matrix.os }}" = "windows-2022" ]; then
+            cp target/${{ matrix.target }}/release/gh-glance.exe dist/gh-glance-${{ matrix.artifact }}
+          else
+            cp target/${{ matrix.target }}/release/gh-glance dist/gh-glance-${{ matrix.artifact }}
+          fi
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: dist/*
+
+  create-release:
+    name: Create Release
+    needs: release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: dist
+          merge-multiple: true
+          path-separator: "/"
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title ${{ github.ref_name }} \
+            --generate-notes \
+            dist/*
