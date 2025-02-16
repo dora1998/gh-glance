@@ -4,7 +4,15 @@ GitHub CLI extension for quickly checking (glancing at) PRs using worktrees.
 
 ## Installation
 
-T.B.D.
+```shell
+gh extension install dora1998/gh-glance
+```
+
+Make sure to add the worktree root directory (default: `.worktree/`) to your `.gitignore`:
+
+```
+.worktree/
+```
 
 ## Usage
 
