@@ -46,13 +46,17 @@ jobs:
           command: build
           args: --release --target ${{ matrix.target }}
       - name: Package extension
+        shell: bash
+        if: matrix.os != 'windows-2022'
         run: |
           mkdir -p dist
-          if [ "${{ matrix.os }}" = "windows-2022" ]; then
-            cp target/${{ matrix.target }}/release/gh-glance.exe dist/gh-glance-${{ matrix.artifact }}
-          else
-            cp target/${{ matrix.target }}/release/gh-glance dist/gh-glance-${{ matrix.artifact }}
-          fi
+          cp target/${{ matrix.target }}/release/gh-glance dist/gh-glance-${{ matrix.artifact }}
+      - name: Package extension (Windows)
+        if: matrix.os == 'windows-2022'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Copy-Item target\${{ matrix.target }}\release\gh-glance.exe dist\gh-glance-${{ matrix.artifact }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
