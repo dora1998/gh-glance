@@ -2,6 +2,27 @@
 
 GitHub CLI extension for quickly checking (glancing at) PRs using worktrees.
 
+## Motivation
+
+When reviewing a pull request, you often need to test it locally. However, switching branches requires committing your local changes first.
+
+[`git worktree`](https://git-scm.com/docs/git-worktree) solves this by letting you check out a branch in a separate directory while keeping your working branch untouched.
+
+One caveat is that files listed in `.gitignore` (like `node_modules`) aren't present in the new worktree. For a Node.js project, you'd typically need to:
+
+```shell
+git worktree add ./.worktree/feature-branch origin/feature-branch
+cd ./.worktree/feature-branch
+npm install
+npm run dev
+```
+
+`gh-glance` simplifies this process into a single command that handles all the necessary worktree setup:
+
+```shell
+gh glance run 1234 dev
+```
+
 ## Installation
 
 ```shell
@@ -19,10 +40,14 @@ Make sure to add the worktree root directory (default: `.worktree/`) to your `.g
 ### `run`
 
 Run defined tasks in the pr's worktree. You can also omit `run`.
-You can specify either PR number or branch name.
+You can specify either pr number or branch name.
 
 ```shell
+# Pull request number
 gh glance run 1234 storybook
+# Branch name
+gh glance run feature/foo storybook
+# Omit `run`
 gh glance 1234 storybook
 ```
 
@@ -32,9 +57,17 @@ Run any command with `--`.
 gh glance 1234 -- pwd
 ```
 
+### `dir`
+
+Get the PR's worktree directory path. Useful with `cd` command:
+
+```shell
+cd $(gh glance dir 1234)
+```
+
 ### `checkout`
 
-Move to the pr's worktree.
+Add the pr's worktree.
 
 ```shell
 gh glance checkout 1234
@@ -64,7 +97,9 @@ Below is an example configuration:
 
 ```toml
 [base]
+worktree_dir = ".worktree/"
 prepare_task = "prepare"
+auto_checkout = false
 auto_pull = "force"
 
 [tasks.prepare]
@@ -88,6 +123,12 @@ run = "bun storybook"
 - Type: String
 - Default: "" (empty string)
 - Description: Task name to run before each task. This task will be executed before running any other task, except when running the prepare task itself.
+
+### `base.auto_checkout`
+
+- Type: Boolean
+- Default: true
+- Description: Whether to automatically checkout the branch when running a task.
 
 ### `base.auto_pull`
 
