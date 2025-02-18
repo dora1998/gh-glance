@@ -20,6 +20,8 @@ pub struct BaseConfig {
     pub auto_pull: String,
     #[serde(default = "default_worktree_dir")]
     pub worktree_dir: String,
+    #[serde(default = "default_auto_checkout")]
+    pub auto_checkout: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -55,6 +57,7 @@ impl Default for BaseConfig {
             prepare_task: String::new(),
             auto_pull: default_auto_pull(),
             worktree_dir: default_worktree_dir(),
+            auto_checkout: default_auto_checkout(),
         }
     }
 }
@@ -65,4 +68,8 @@ fn default_auto_pull() -> String {
 
 fn default_worktree_dir() -> String {
     ".worktree".to_string()
+}
+
+fn default_auto_checkout() -> bool {
+    true
 } 
