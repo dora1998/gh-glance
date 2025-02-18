@@ -9,7 +9,7 @@ impl Git {
         Self
     }
 
-    fn get_repo_root(&self) -> Result<String> {
+    pub fn get_repo_root(&self) -> Result<String> {
         let output = Command::new("git")
             .args(["rev-parse", "--show-toplevel"])
             .output()

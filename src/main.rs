@@ -40,6 +40,11 @@ enum Commands {
         /// Task name
         task: String,
     },
+    /// Get PR's worktree directory
+    Dir {
+        /// PR number or branch name
+        target: String,
+    },
     /// Move to PR's worktree
     Checkout {
         /// PR number or branch name
@@ -71,6 +76,9 @@ async fn main() -> Result<()> {
     match cli.command {
         Some(Commands::Run { target, task }) => {
             run_task(&target, &task).await?;
+        }
+        Some(Commands::Dir { target }) => {
+            get_worktree_dir(&git, &github, &target).await?;
         }
         Some(Commands::Checkout { target }) => {
             checkout_target(&git, &github, &target).await?;
@@ -226,5 +234,23 @@ async fn clean_worktrees(git: &Git, github: &GitHub) -> Result<()> {
         println!("\nOperation cancelled.");
     }
 
+    Ok(())
+}
+
+async fn get_worktree_dir(git: &Git, github: &GitHub, target: &str) -> Result<()> {
+    let config = Config::load()?;
+    let repo_root = git.get_repo_root()?;
+    let workdir = Path::new(&repo_root).join(&config.base.worktree_dir).join(target);
+    let workdir_str = workdir.to_str()
+        .with_context(|| format!("Invalid characters in worktree path: {}", workdir.display()))?;
+    
+    // auto_checkoutが有効な場合は、ワークツリーが存在しない場合に自動的にチェックアウトする
+    if config.base.auto_checkout && !git.exists_worktree(workdir_str) {
+        checkout_target(git, github, target).await?;
+    } else if !git.exists_worktree(workdir_str) {
+        anyhow::bail!("Worktree not found at: {}. Please run 'checkout' first.", workdir.display());
+    }
+
+    println!("{}", workdir_str);
     Ok(())
 } 
